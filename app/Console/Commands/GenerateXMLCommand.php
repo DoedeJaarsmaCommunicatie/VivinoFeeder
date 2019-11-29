@@ -27,11 +27,11 @@ class GenerateXMLCommand extends Command
     {
         $root = $this->generateXml();
 
-        $this->loopProducts($root);
+        $this->loopProducts($root, 100);
         $lastResponse = static::$client->http->getResponse();
         $pages = (int) $lastResponse->getHeaders()['x-wp-totalpages'];
         for ($i = 2; $i <= $pages; $i++) {
-            $this->loopProducts($root, 10, $i);
+            $this->loopProducts($root, 100, $i);
         }
 
         Storage::put('vivinofeed.xml', $root->asXML());
@@ -50,9 +50,13 @@ class GenerateXMLCommand extends Command
      * @param int $limit
      * @param int $page
      */
-    private function loopProducts(&$root, int $limit = 10, int $page = 1)
+    private function loopProducts(&$root, int $limit = 10, int $page = 1): void
     {
         foreach ($this->getProducts($limit, $page) as $product) {
+            if (Str::contains($product->name, 'Wijnkistje')) {
+                continue;
+            }
+
             $productLine = $root->addChild('product');
             $productLine->addChild('product-name', static::getProductName($product));
             $productLine->addChild('price', $product->regular_price);
