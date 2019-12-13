@@ -53,7 +53,8 @@ class GenerateXMLCommand extends Command
     private function loopProducts(&$root, int $limit = 10, int $page = 1): void
     {
         foreach ($this->getProducts($limit, $page) as $product) {
-            if (Str::contains($product->name, 'Wijnkistje')) {
+            if ($product->catalog_visibility !== 'visible' ||
+                Str::contains($product->name, ['Wijnkistje', 'Wijnglas', 'wijnzak', 'Fijnproeverspakket', 'proef', 'wijnglas', 'wijnglazen'])) {
                 continue;
             }
 
@@ -62,6 +63,7 @@ class GenerateXMLCommand extends Command
             $productLine->addChild('price', $product->regular_price);
             $productLine->addChild('bottles', '1')->addAttribute('size', '750ml');
             $productLine->addChild('link', $product->permalink);
+            $productLine->addChild('inventory-count', $product->stock_quantity ?? 200);
         }
     }
 
@@ -135,6 +137,8 @@ class GenerateXMLCommand extends Command
 
         if ($year->isNotEmpty()) {
             $name .= ' ' . $year->first()->options[0];
+        } else {
+            $name .= ' N.V.';
         }
 
         return $name;
