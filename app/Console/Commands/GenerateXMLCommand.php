@@ -138,7 +138,7 @@ class GenerateXMLCommand extends Command
         if ($year->isNotEmpty()) {
             $name .= ' ' . $year->first()->options[0];
         } else {
-            $name .= ' N.V.';
+            $name .= ' NV';
         }
 
         return $name;
