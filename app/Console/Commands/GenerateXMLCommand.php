@@ -27,7 +27,7 @@ class GenerateXMLCommand extends Command
     {
         $root = $this->generateXml();
 
-        $this->loopProducts($root, 100);
+        $this->loopProducts($root, 10);
         $lastResponse = static::$client->http->getResponse();
         $pages = (int) $lastResponse->getHeaders()['x-wp-totalpages'];
         for ($i = 2; $i <= $pages; $i++) {
@@ -136,7 +136,11 @@ class GenerateXMLCommand extends Command
         }
 
         if ($year->isNotEmpty()) {
-            $name .= ' ' . $year->first()->options[0];
+            if ($year->first()->options[0] === 'N.V.') {
+                $name .= ' NV';
+            } else {
+                $name .= ' ' . $year->first()->options[0];
+            }
         } else {
             $name .= ' NV';
         }
