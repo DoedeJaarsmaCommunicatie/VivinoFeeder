@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
 use Illuminate\Console\Command;
 use Automattic\WooCommerce\Client;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class GenerateXMLCommand extends Command
@@ -59,6 +61,15 @@ class GenerateXMLCommand extends Command
             if ($product->catalog_visibility !== 'visible' ||
                 Str::contains($product->name, ['Wijnkistje', 'Wijnglas', 'wijnzak', 'Fijnproeverspakket', 'proef', 'wijnglas', 'wijnglazen'])) {
                 continue;
+            }
+
+            $meta = Collection::make($product->meta_data);
+            if ($meta->contains('key', '=','_exclude_vivino')) {
+                $exclude = $meta->where('key', '=', '_exclude_vivino')->first();
+                if ($exclude->value === 'yes') {
+                    $this->line('SKIPPED', static::getProductName($product));
+                    continue;
+                }
             }
 
             $productLine = $root->addChild('product');
