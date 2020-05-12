@@ -30,8 +30,11 @@ class GenerateXMLCommand extends Command
         $this->loopProducts($root, 10);
         $lastResponse = static::$client->http->getResponse();
         $pages = (int) $lastResponse->getHeaders()['x-wp-totalpages'];
+
         for ($i = 2; $i <= $pages; $i++) {
-            $this->loopProducts($root, 100, $i);
+            $this->line('Starting on page: ' . $i);
+            $this->loopProducts($root, 10, $i);
+            $this->line('Finished with page: ' . $i);
         }
 
         Storage::put('vivinofeed.xml', $root->asXML());
