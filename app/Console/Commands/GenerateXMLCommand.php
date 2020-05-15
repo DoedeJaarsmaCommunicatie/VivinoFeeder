@@ -7,6 +7,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Console\Command;
 use Automattic\WooCommerce\Client;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class GenerateXMLCommand extends Command
@@ -27,11 +28,12 @@ class GenerateXMLCommand extends Command
 
     public function handle()
     {
+        $pagesHeader = app()->environment('dev', 'local')? 'x-wp-totalpages' : 'X-WP-TotalPages';
         $root = $this->generateXml();
 
         $this->loopProducts($root, 10);
         $lastResponse = static::$client->http->getResponse();
-        $pages = (int) $lastResponse->getHeaders()['x-wp-totalpages'];
+        $pages = (int) $lastResponse->getHeaders()[$pagesHeader];
 
         for ($i = 2; $i <= $pages; $i++) {
             $this->line('Starting on page: ' . $i);
@@ -58,8 +60,7 @@ class GenerateXMLCommand extends Command
     private function loopProducts(&$root, int $limit = 10, int $page = 1): void
     {
         foreach ($this->getProducts($limit, $page) as $product) {
-            if ($product->catalog_visibility !== 'visible' ||
-                Str::contains($product->name, ['Wijnkistje', 'Wijnglas', 'wijnzak', 'Fijnproeverspakket', 'proef', 'wijnglas', 'wijnglazen'])) {
+            if ($this->isValidProduct($product)) {
                 continue;
             }
 
@@ -160,5 +161,26 @@ class GenerateXMLCommand extends Command
         }
 
         return $name;
+    }
+
+    /**
+     * @param \stdClass $product
+     *
+     * @return bool
+     */
+    private function isValidProduct($product): bool
+    {
+        try {
+            $price = (float) $product->regular_price;
+        } catch (\Throwable $e) {
+            $price = 0;
+        }
+
+        $validPrice = $price !== 0 && $price < 15.00;
+
+        return $product->catalog_visibility !== 'visible' ||
+               $product->status !== 'publish' ||
+               !$validPrice ||
+               Str::contains($product->name, ['Wijnkistje', 'Wijnglas', 'wijnzak', 'Fijnproeverspakket', 'proef', 'wijnglas', 'wijnglazen']);
     }
 }
