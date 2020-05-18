@@ -60,7 +60,7 @@ class GenerateXMLCommand extends Command
     private function loopProducts(&$root, int $limit = 10, int $page = 1): void
     {
         foreach ($this->getProducts($limit, $page) as $product) {
-            if ($this->isValidProduct($product)) {
+            if ($this->isInvalidProduct($product)) {
                 continue;
             }
 
@@ -75,7 +75,7 @@ class GenerateXMLCommand extends Command
 
             $productLine = $root->addChild('product');
             $productLine->addChild('product-name', static::getProductName($product));
-            $productLine->addChild('price', $product->regular_price);
+            $productLine->addChild('price', static::getProductPrice($product, $meta));
             $productLine->addChild('bottles', '1')->addAttribute('size', '750ml');
             $productLine->addChild('link', $product->permalink);
             $productLine->addChild('inventory-count', $product->stock_quantity ?? 200);
@@ -168,7 +168,7 @@ class GenerateXMLCommand extends Command
      *
      * @return bool
      */
-    private function isValidProduct($product): bool
+    private function isInvalidProduct($product): bool
     {
         try {
             $price = (float) $product->regular_price;
@@ -182,5 +182,21 @@ class GenerateXMLCommand extends Command
                $product->status !== 'publish' ||
                !$validPrice ||
                Str::contains($product->name, ['Wijnkistje', 'Wijnglas', 'wijnzak', 'Fijnproeverspakket', 'proef', 'wijnglas', 'wijnglazen']);
+    }
+
+    /**
+     * @param \stdClass $product
+     * @param Collection $meta
+     *
+     * @return string
+     */
+    protected static function getProductPrice($product, $meta): string
+    {
+        if ($meta->contains('key', '=', '_vivino_pricing')) {
+            $price = $meta->where('key', '=', '_vivino_pricing')->first();
+            return (string) $price->value;
+        }
+
+        return $product->regular_price;
     }
 }
