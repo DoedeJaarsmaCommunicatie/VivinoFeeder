@@ -74,7 +74,11 @@ class GenerateXMLCommand extends Command
             }
 
             $productLine = $root->addChild('product');
-            $productLine->addChild('product-name', static::getProductName($product));
+            try {
+                $productLine->addChild('product-name', static::getProductName($product));
+            } catch (\Throwable $e) {
+                $this->line($product->name);
+            }
             $productLine->addChild('price', static::getProductPrice($product, $meta));
             $productLine->addChild('bottles', '1')->addAttribute('size', '750ml');
             $productLine->addChild('link', $product->permalink);
